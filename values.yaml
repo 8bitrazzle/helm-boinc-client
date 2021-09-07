@@ -1,0 +1,46 @@
+# Default values for boince-client 
+#
+
+replicaCount: 1
+
+image:
+  repository: boinc/client
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+boinc:
+  # Project to attach e.g https://lhcathome.cern.ch/lhcathome/
+  project: 
+  accountKey: 
+  # Password used when attaching a remote computer with BOINC manager
+  manager_password: 
+
+service:
+  type: NodePort
+  nodeport: 
+  port: 31416
+
+  # If you have storage classes configured set enabled to true and specify storageClass name
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 5Gi
+  mountPath: /var/lib/boinc
+
+  # resource limitations are disabled by default, to enable delete {} from the resource line and uncomment limits and requests 
+resources: {}
+  # limits:
+    # cpu: 2000m
+    # memory: 1024Gi
+  # requests:
+    # cpu: 500m
+    # memory: 512Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

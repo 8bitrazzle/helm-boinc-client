@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "boinc.fullname" . }} 
+  labels:
+{{ include "boinc.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: boinc
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "boinc.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "boinc.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: BOINC_GUI_RPC_PASSWORD
+            value: "{{ .Values.boinc.manager_password }}"
+          - name: BOINC_CMD_LINE_OPTIONS
+            value: "--allow_remote_gui_rpc --attach_project {{ .Values.boinc.project }} {{ .Values.boinc.accountKey }}"
+          ports:
+            - name: http
+              containerPort: 31416
+              protocol: TCP
+{{- if .Values.persistence.enbled }}
+          volumeMounts:
+            - mountPath: {{ .Values.persistence.mountPath }}
+              name: data
+{{- end }}
+{{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: "{{ template "boinc.name" . }}"
+         # release: {{ .Release.Name | quote }}
+         # heritage: {{ .Release.Service | quote }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+      {{- if .Values.persistence.storageClass }}
+      {{- if (eq "-" .Values.persistence.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+
